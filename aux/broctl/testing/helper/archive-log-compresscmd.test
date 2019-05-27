@@ -1,0 +1,71 @@
+# Test that the archive-log script archives and compresses a specified
+# log file (including a connection summary report) according to the
+# CompressCmd and CompressExtension broctl options.
+#
+# @TEST-EXEC: bash %INPUT
+
+. broctl-test-setup
+
+while read line; do installfile $line; done << EOF
+bin/compress__test --new
+EOF
+
+cat >> $BROCTL_INSTALL_PREFIX/etc/broctl.cfg << EOF
+compresscmd=@PREFIX@/bin/compress -i
+compressextension=broctlcompress
+sendmail=
+EOF
+
+replaceprefix etc/broctl.cfg
+
+archivelog=$BROCTL_INSTALL_PREFIX/share/broctl/scripts/archive-log
+logdir=$BROCTL_INSTALL_PREFIX/logs/2013-12-30
+connlog=${logdir}/conn.22:24:20-22:30:00.log.broctlcompress
+testlog=${logdir}/broctltest.22:24:20-22:30:00.log.broctlcompress
+connsummarylog=${logdir}/conn-summary.22:24:20-22:30:00.log.broctlcompress
+origconnlog=conn.2013-12-30-22-24-20.log
+origtestlog=broctltest.2013-12-30-22-24-20.log
+
+broctl install
+
+# Create Bro's working directory, chdir to that dir, and create rotated logs
+mkdir $BROCTL_INSTALL_PREFIX/spool/bro
+cd $BROCTL_INSTALL_PREFIX/spool/bro
+cat > ${origconnlog} << _EOF_
+# This is a BROCTL TEST
+_EOF_
+cat > ${origtestlog} << _EOF_
+# This is a BROCTL TEST
+_EOF_
+
+###############################################
+# Test archive-log for the conn.log file
+
+${archivelog} ${origconnlog} conn 13-12-30_22.24.20 13-12-30_22.30.00 0 ascii
+
+# verify that the logs were archived
+test ! -f ${origconnlog}
+test -f ${connlog}
+test -f ${connsummarylog}
+
+# verify that the logs were compressed according to the broctl options
+grep -q "compressed" ${connlog}
+grep -q "compress option" ${connlog}
+grep -q ">== Total ===" ${connsummarylog}
+grep -q "compress option" ${connsummarylog}
+
+###############################################
+# Test archive-log for a different log file
+
+# verify that the broctltest.log was not archived yet
+test ! -f ${testlog}
+
+${archivelog} ${origtestlog} broctltest 13-12-30_22.24.20 13-12-30_22.30.00 0 ascii
+
+# verify that broctltest.log was archived
+test ! -f ${origtestlog}
+test -f ${testlog}
+
+# verify that broctltest.log was compressed according to the broctl options
+grep -q "compressed" ${testlog}
+grep -q "compress option" ${testlog}

@@ -1,0 +1,42 @@
+language: python
+python:
+  - "2.7"
+  - "3.4"
+  - "3.5"
+  - "3.6"
+
+addons:
+  apt:
+    packages:
+      - libpcap-dev
+      - swig
+
+branches:
+  only:
+  - master
+
+notifications:
+  email:
+    recipients:
+    - bro-commits-internal@bro.org
+
+before_install:
+  # Python 2.7 doesn't have the ipaddress module (required by broker).
+  - python -c "import ipaddress" || pip install ipaddress
+  # Clone the bro git repo and replace broctl.
+  - cd ..
+  - tar cf broctl.tar --exclude=.git broctl
+  - rm -rf broctl
+  - git clone --recursive git://git.bro.org/bro
+  - rm -rf bro/aux/broctl
+  - tar xf broctl.tar -C bro/aux
+  - rm -f broctl.tar
+  - cd bro/aux/broctl/testing
+
+install:
+  - make buildbro
+  - rm -rf ../build/bro-build
+
+script: make btest-verbose
+
+after_failure: cat diag.log

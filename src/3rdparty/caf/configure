@@ -1,0 +1,473 @@
+#!/bin/sh
+# Convenience wrapper for easily viewing/setting options that
+# the project's CMake scripts will recognize.
+
+# check for `cmake` command
+type cmake > /dev/null 2>&1 || {
+    echo "\
+This package requires CMake, please install it first, then you may
+use this configure script to access CMake equivalent functionality.\
+" >&2;
+    exit 1;
+}
+
+command="$0 $*"
+dirname_0=`dirname $0`
+sourcedir=`cd $dirname_0 && pwd`
+
+usage="\
+Usage: $0 [OPTION]... [VAR=VALUE]...
+
+  Build Options:
+    --generator=GENERATOR       set CMake generator (see cmake --help)
+    --build-type=TYPE           set CMake build type [RelWithDebInfo]:
+                                  - Debug: debugging flags enabled
+                                  - MinSizeRel: minimal output size
+                                  - Release: optimizations on, debugging off
+                                  - RelWithDebInfo: release flags plus debugging
+    --extra-flags=STRING        additional compiler flags
+    --build-dir=DIR             place build files in directory [build]
+    --bin-dir=DIR               executable directory [build/bin]
+    --lib-dir=DIR               library directory [build/lib]
+    --with-clang=FILE           path to clang++ executable
+    --with-gcc=FILE             path to g++ executable
+    --with-qt-prefix=PATH       prefix path for Qt5 cmake modules
+    --with-openssl=PATH         path to OpenSSL library and headers
+    --dual-build                build using both gcc and clang
+    --build-static              build as static and shared library
+    --build-static-only         build as static library only
+    --static-runtime            build with static C++ runtime
+    --more-warnings             enables most warnings
+    --no-compiler-check         disable compiler version check
+    --no-auto-libc++            do not automatically enable libc++ for Clang
+    --no-exceptions             do not catch exceptions in CAF
+    --force-no-exceptions       build CAF with '-fno-exceptions'
+    --warnings-as-errors        build with '-Werror'
+    --with-ccache               use ccache to improve build performance
+
+  Optional Targets:
+    --with-qt-examples          build Qt example(s)
+    --with-protobuf-examples    build Google Protobuf example(s)
+    --with-tex-manual           build the LaTeX manual
+
+  Installation Directories:
+    --prefix=PREFIX             installation directory [/usr/local]
+
+  Remove Standard Features (even if all dependencies are available):
+    --no-memory-management      build without memory management
+    --no-examples               build without examples
+    --no-curl-examples          build without libcurl examples
+    --no-unit-tests             build without unit tests
+    --no-opencl                 build without OpenCL module
+    --no-openssl                build without OpenSSL module
+    --no-benchmarks             build without benchmarks
+    --no-tools                  build without CAF tools such as caf-run
+    --no-io                     build without I/O module
+    --no-python                 build without python binding
+    --no-summary                do not print configuration before building
+    --core-only                 sets no-examples, no-opencl, no-openssl,
+                                no-tools, no-python, and no-io
+
+  Debugging:
+    --with-runtime-checks       build with requirement checks at runtime
+    --with-log-level=LVL        build with debugging output, possible values:
+                                  - ERROR
+                                  - WARNING
+                                  - INFO
+                                  - DEBUG
+                                  - TRACE
+    --with-address-sanitizer    build with address sanitizer if available
+    --with-asan                 alias for --with-address-sanitier
+    --enable-asan               alias for --with-address-sanitier
+    --with-gcov                 build with gcov coverage enabled
+
+  Convenience options:
+    --dev-mode                  sets --build-type=debug, --no-examples,
+                                --no-tools, --with-runtime-checks,
+                                --log-level=trace, and --enable-asan
+
+  Influential Environment Variables (only on first invocation):
+    CXX                         C++ compiler command
+    CXXFLAGS                    C++ compiler flags (overrides defaults)
+    LDFLAGS                     Additional linker flags
+    CMAKE_GENERATOR     Selects a custom generator
+
+  Python Build Options:
+    --with-python-config=FILE   Use python-conf binary to determine includes and libs
+
+  iOS Build Options (should be used with XCode generator):
+    --sysroot=DIR               set system root for Clang
+                                  - iphoneos: for iOS device
+                                  - iphonesimulator: for iOS simulator
+    --ios-min-ver=VERSION       set the ios deployment target version
+"
+
+
+# Appends a CMake cache entry definition to the CMakeCacheEntries variable.
+#   $1 is the cache entry variable name
+#   $2 is the cache entry variable type
+#   $3 is the cache entry variable value
+append_cache_entry ()
+{
+    case "$3" in
+        *\ * )
+            # string contains whitespace
+            CMakeCacheEntries="$CMakeCacheEntries -D \"$1:$2=$3\""
+            ;;
+        *)
+            # string contains whitespace
+            CMakeCacheEntries="$CMakeCacheEntries -D $1:$2=$3"
+            ;;
+    esac
+}
+
+# Creates a build directory via CMake.
+#   $1 is the path to a compiler executable.
+#   $2 is the suffix of the build directory.
+#   $3 is the executable output path.
+#   $4 is the library output path.
+#   $5 is the CMake generator.
+configure ()
+{
+
+    CMakeCacheEntries=$CMakeDefaultCache
+
+    if [ -n "$1" ]; then
+        append_cache_entry CMAKE_CXX_COMPILER FILEPATH $1
+    fi
+
+    case "$builddir" in
+        /*)
+            #absolute path given
+            absolute_builddir="$builddir"
+            ;;
+        *)
+            # relative path given; convert to absolute path
+            absolute_builddir="$PWD/$builddir"
+            ;;
+    esac
+
+    if [ -n "$2" ]; then
+        workdir="$absolute_builddir-$2"
+    else
+        workdir="$absolute_builddir"
+    fi
+    workdirs="$workdirs $workdir"
+
+    if [ -n "$3" ]; then
+        append_cache_entry EXECUTABLE_OUTPUT_PATH PATH "$3"
+    else
+        append_cache_entry EXECUTABLE_OUTPUT_PATH PATH "$workdir/bin"
+    fi
+
+    if [ -n "$4" ]; then
+        append_cache_entry LIBRARY_OUTPUT_PATH PATH "$4"
+    else
+        append_cache_entry LIBRARY_OUTPUT_PATH PATH "$workdir/lib"
+    fi
+
+    if [ -d "$workdir" ]; then
+        # If a build directory exists, check if it has a CMake cache.
+        if [ -f "$workdir/CMakeCache.txt" ]; then
+            # If the CMake cache exists, delete it so that this configuration
+            # is not tainted by a previous one.
+            rm -f "$workdir/CMakeCache.txt"
+        fi
+    else
+        mkdir -p "$workdir"
+    fi
+
+    cd "$workdir"
+
+    if [ -n "$5" ]; then
+        cmake -G "$5" $CMakeCacheEntries "$sourcedir"
+    else
+        cmake $CMakeCacheEntries "$sourcedir"
+    fi
+
+    printf "#!/bin/sh\n\n" > config.status
+    printf "# Switch to the source of this build directory.\n" >> config.status
+    printf "cd \"$sourcedir\"\n\n" >> config.status
+    printf "# Invoke the command to configure this build.\n" >> config.status
+    if [ -n "$CC" ]; then
+      printf "CC=\"%s\"\n" "$CC" >> config.status
+    fi
+    if [ -n "$CXX" ]; then
+      printf "CXX=\"%s\"\n" "$CXX" >> config.status
+    fi
+    if [ -n "$CXXFLAGS" ]; then
+      printf "CXXFLAGS=\"%s\"\n" "$CXXFLAGS" >> config.status
+    fi
+    if [ -n "$LDFLAGS" ]; then
+      printf "LDFLAGS=\"%s\"\n" "$LDFLAGS" >> config.status
+    fi
+    echo $command >> config.status
+    chmod u+x config.status
+}
+
+# Set defaults.
+builddir="$sourcedir/build"
+CMakeCacheEntries=""
+append_cache_entry CMAKE_INSTALL_PREFIX        PATH   /usr/local
+append_cache_entry CAF_ENABLE_RUNTIME_CHECKS   BOOL   false
+
+# parse custom environment variable to initialize CMakeGenerator
+if [ -n "$CMAKE_GENERATOR" ]; then
+  CMakeGenerator="$CMAKE_GENERATOR"
+fi
+
+# Parse arguments.
+while [ $# -ne 0 ]; do
+    case "$1" in
+        -*=*) optarg=`echo "$1" | sed 's/[-_a-zA-Z0-9]*=//'` ;;
+        *) optarg= ;;
+    esac
+
+    case "$1" in
+        --help|-h)
+            echo "${usage}" 1>&2
+            exit 1
+            ;;
+        --generator=*)
+            CMakeGenerator="$optarg"
+            ;;
+        --prefix=*)
+            append_cache_entry CMAKE_INSTALL_PREFIX PATH "$optarg"
+            ;;
+        --with-runtime-checks)
+            append_cache_entry CAF_ENABLE_RUNTIME_CHECKS BOOL yes
+            ;;
+        --with-address-sanitizer)
+            append_cache_entry CAF_ENABLE_ADDRESS_SANITIZER BOOL yes
+            ;;
+        --with-asan)
+            append_cache_entry CAF_ENABLE_ADDRESS_SANITIZER BOOL yes
+            ;;
+        --enable-asan)
+            append_cache_entry CAF_ENABLE_ADDRESS_SANITIZER BOOL yes
+            ;;
+        --with-gcov)
+            append_cache_entry CAF_ENABLE_GCOV BOOL yes
+            ;;
+        --no-memory-management)
+            append_cache_entry CAF_NO_MEM_MANAGEMENT BOOL yes
+            ;;
+        --more-warnings)
+            append_cache_entry CAF_MORE_WARNINGS BOOL yes
+            ;;
+        --no-compiler-check)
+            append_cache_entry CAF_NO_COMPILER_CHECK BOOL yes
+            ;;
+        --no-auto-libc++)
+            append_cache_entry CAF_NO_AUTO_LIBCPP BOOL yes
+            ;;
+        --no-exceptions)
+            append_cache_entry CAF_NO_EXCEPTIONS BOOL yes
+            ;;
+        --force-no-exceptions)
+            append_cache_entry CAF_NO_EXCEPTIONS BOOL yes
+            append_cache_entry CAF_FORCE_NO_EXCEPTIONS BOOL yes
+            ;;
+        --warnings-as-errors)
+            append_cache_entry CAF_CXX_WARNINGS_AS_ERRORS BOOL yes
+            ;;
+        --with-ccache)
+            append_cache_entry CAF_USE_CCACHE BOOL yes
+            ;;
+        --sysroot=*)
+            append_cache_entry CAF_OSX_SYSROOT PATH "$optarg"
+            ;;
+        --ios-min-ver=*)
+            append_cache_entry CMAKE_OSX_ARCHITECTURES STRING "\$(ARCHS_STANDARD_32_64_BIT)"
+            append_cache_entry CAF_IOS_DEPLOYMENT_TARGET STRING "$optarg"
+            ;;
+        --with-log-level=*)
+            level=`echo "$optarg" | tr '[:lower:]' '[:upper:]'`
+            case $level in
+                ERROR)
+                    append_cache_entry CAF_LOG_LEVEL STRING 0
+                    ;;
+                WARNING)
+                    append_cache_entry CAF_LOG_LEVEL STRING 1
+                    ;;
+                INFO)
+                    append_cache_entry CAF_LOG_LEVEL STRING 2
+                    ;;
+                DEBUG)
+                    append_cache_entry CAF_LOG_LEVEL STRING 3
+                    ;;
+                TRACE)
+                    append_cache_entry CAF_LOG_LEVEL STRING 4
+                    ;;
+                *)
+                    echo "Invalid log level '$level'. Try '$0 --help' to see valid values."
+                    exit 1
+                    ;;
+            esac
+            ;;
+        --with-clang=*)
+            clang="$optarg"
+            ;;
+        --with-gcc=*)
+            gcc="$optarg"
+            ;;
+        --with-qt-prefix=*)
+            append_cache_entry CAF_QT_PREFIX_PATH STRING "$optarg"
+            ;;
+        --with-openssl=*)
+            append_cache_entry OPENSSL_ROOT_DIR PATH "$optarg"
+            ;;
+        --build-type=*)
+            append_cache_entry CMAKE_BUILD_TYPE STRING "$optarg"
+            ;;
+        --extra-flags=*)
+            append_cache_entry EXTRA_FLAGS STRING "$optarg"
+            ;;
+        --build-dir=*)
+            builddir="$optarg"
+            ;;
+        --bin-dir=*)
+            bindir="$optarg"
+            ;;
+        --lib-dir=*)
+            libdir="$optarg"
+            ;;
+        --dual-build)
+            dualbuild=1
+            ;;
+        --no-examples)
+            append_cache_entry CAF_NO_EXAMPLES BOOL yes
+            ;;
+        --with-qt-examples)
+            append_cache_entry CAF_BUILD_QT_EXAMPLES BOOL yes
+            ;;
+        --with-protobuf-examples)
+            append_cache_entry CAF_BUILD_PROTOBUF_EXAMPLES BOOL yes
+            ;;
+        --with-tex-manual)
+            append_cache_entry CAF_BUILD_TEX_MANUAL BOOL yes
+            ;;
+        --no-curl-examples)
+            append_cache_entry CAF_NO_CURL_EXAMPLES BOOL yes
+            ;;
+        --no-unit-tests)
+            append_cache_entry CAF_NO_UNIT_TESTS BOOL yes
+            ;;
+        --no-opencl)
+            append_cache_entry CAF_NO_OPENCL BOOL yes
+            ;;
+        --no-openssl)
+            append_cache_entry CAF_NO_OPENSSL BOOL yes
+            ;;
+        --build-static)
+            append_cache_entry CAF_BUILD_STATIC BOOL yes
+            ;;
+        --build-static-only)
+            append_cache_entry CAF_BUILD_STATIC_ONLY BOOL yes
+            ;;
+        --static-runtime)
+            append_cache_entry CAF_BUILD_STATIC_RUNTIME BOOL yes
+            ;;
+        --with-python-config=*)
+            append_cache_entry CAF_PYTHON_CONFIG_BIN FILEPATH "$optarg"
+            ;;
+        --no-benchmarks)
+            append_cache_entry CAF_NO_BENCHMARKS BOOL yes
+            ;;
+        --no-tools)
+            append_cache_entry CAF_NO_TOOLS BOOL yes
+            ;;
+        --no-io)
+            append_cache_entry CAF_NO_IO BOOL yes
+            ;;
+        --no-python)
+            append_cache_entry CAF_NO_PYTHON BOOL yes
+            ;;
+        --no-summary)
+            append_cache_entry CAF_NO_SUMMARY BOOL yes
+            ;;
+        --core-only)
+            append_cache_entry CAF_NO_TOOLS BOOL yes
+            append_cache_entry CAF_NO_IO BOOL yes
+            append_cache_entry CAF_NO_PYTHON BOOL yes
+            append_cache_entry CAF_NO_EXAMPLES BOOL yes
+            append_cache_entry CAF_NO_OPENCL BOOL yes
+            append_cache_entry CAF_NO_OPENSSL BOOL yes
+            ;;
+        --dev-mode)
+            append_cache_entry CMAKE_BUILD_TYPE STRING Debug
+            append_cache_entry CAF_NO_EXAMPLES BOOL yes
+            append_cache_entry CAF_NO_TOOLS BOOL yes
+            append_cache_entry CAF_LOG_LEVEL STRING 4
+            append_cache_entry CAF_ENABLE_RUNTIME_CHECKS BOOL yes
+            append_cache_entry CAF_ENABLE_ADDRESS_SANITIZER BOOL yes
+            ;;
+        *)
+            echo "Invalid option '$1'.  Try $0 --help to see available options."
+            exit 1
+            ;;
+    esac
+    shift
+done
+
+# At this point we save the global CMake variables so that configure() can
+# later use them.
+CMakeDefaultCache=$CMakeCacheEntries
+
+if [ -n "$dualbuild" ]; then
+    # Use what we got in $PATH if --with-clang or --with-gcc is not specified.
+    if [ -z "$clang" ]; then
+        clang=clang++
+    fi
+    if [ -z "$gcc" ]; then
+        gcc=g++
+    fi
+
+    for i in gcc clang; do
+        eval "compiler=\$$i"
+        configure $compiler $i "" "" $CMakeGenerator
+    done
+else
+    # Prefer Clang to GCC.
+    if [ -n "$clang" ]; then
+        compiler=$clang
+    elif [ -n "$gcc" ]; then
+        compiler=$gcc
+    fi
+
+    configure "$compiler" "" "$bindir" "$libdir" "$CMakeGenerator"
+fi
+
+if [ -n "$CMakeGenerator" ] && [ "$CMakeGenerator" != "Unix" ]; then
+  # skip Makefile-specific code below when not using make
+  exit 0
+fi
+
+printf "DIRS := %s\n\n" "$workdirs" > $sourcedir/Makefile
+makefile=`cat <<'EOT'
+all:
+	@for i in $(DIRS); do $(MAKE) -C $$i $@ || exit; done
+
+test:
+	@for i in $(DIRS); do $(MAKE) -C $$i $@ || exit; done
+
+install:
+	@for i in $(DIRS); do $(MAKE) -C $$i $@ || exit; done
+
+uninstall:
+	@for i in $(DIRS); do $(MAKE) -C $$i $@ || exit; done
+
+clean:
+	@for i in $(DIRS); do $(MAKE) -C $$i $@; done
+
+distclean:
+	rm -rf $(DIRS) Makefile
+
+doc:
+	$(MAKE) -C $(firstword $(DIRS)) $@
+
+.PHONY: all test install uninstall clean distclean doc
+EOT
+`
+
+echo "$makefile" >> $sourcedir/Makefile

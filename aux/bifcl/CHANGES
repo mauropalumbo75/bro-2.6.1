@@ -1,0 +1,12 @@
+
+1.1 | 2018-08-31 15:23:21 -0500
+
+  * Add Makefile (Jon Siwek, Corelight)
+
+1.0-1 | 2018-07-24 01:58:34 +0000
+
+  * Fix compiler warning. (Robin Sommer, Corelight)
+
+1.0 | 2018-07-24 01:54:16 +0000
+
+  * bifcl is a now a separate project, starting CHANGES.

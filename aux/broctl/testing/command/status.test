@@ -1,0 +1,40 @@
+# Test that the status command can get status of all nodes, or just a
+# specified node.  Also test that the exit status is zero if all nodes
+# are running, and nonzero otherwise.
+#
+# This test needs to be serialized because we are using the broker python
+# bindings.
+# @TEST-SERIALIZE: listen
+#
+# @TEST-EXEC: bash %INPUT
+# @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-status-output --peers" btest-diff all.out
+# @TEST-EXEC: TEST_DIFF_CANONIFIER="$SCRIPTS/diff-status-output --peers" btest-diff onenode.out
+# @TEST-EXEC: btest-diff stopped.out
+
+. broctl-test-setup
+
+while read line; do installfile $line; done << EOF
+etc/broctl.cfg__no_email
+etc/node.cfg__no_netifs
+EOF
+
+echo "statuscmdshowall=1" >> $BROCTL_INSTALL_PREFIX/etc/broctl.cfg
+
+broctl install
+broctl start
+
+# get status of all nodes
+broctl status > all.out
+
+# get status of one node
+broctl status manager > onenode.out
+
+broctl stop worker-1
+
+# not all nodes are running
+! broctl status
+
+broctl stop
+
+# all nodes are stopped
+! broctl status > stopped.out

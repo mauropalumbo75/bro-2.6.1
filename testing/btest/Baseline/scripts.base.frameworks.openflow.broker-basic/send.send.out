@@ -1,0 +1,8 @@
+Broker peer added, [address=127.0.0.1, bound_port=9999/tcp]
+Flow_mod_success
+Flow_mod_failure
+connection established
+Flow_mod_success
+Flow_mod_failure
+Flow_mod_success
+Flow_mod_failure
