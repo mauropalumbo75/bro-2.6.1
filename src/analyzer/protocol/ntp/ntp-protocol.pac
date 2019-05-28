@@ -1,3 +1,4 @@
+
 # This is the common part in the header format. 
 # See RFC 5905 for details
 type NTP_PDU(is_orig: bool) = record {

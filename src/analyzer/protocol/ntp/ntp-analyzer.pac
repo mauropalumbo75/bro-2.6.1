@@ -29,6 +29,46 @@
 %}
 
 refine flow NTP_Flow += {
+
+        # This builds the standard msg record
+        function BuildNTPStdMsg(nsm: NTP_std_msg): BroVal
+                %{
+                   RecordVal* rv = new RecordVal(BifType::Record::NTP::std);
+
+                rv->Assign(0, new Val(${nsm.stratum}, TYPE_COUNT));
+                rv->Assign(1, new Val(pow(2, ${nsm.poll}), TYPE_INTERVAL));
+                rv->Assign(2, new Val(pow(2, ${nsm.precision}), TYPE_INTERVAL));
+                rv->Assign(3, proc_ntp_short(${nsm.root_delay}));
+                rv->Assign(4, proc_ntp_short(${nsm.root_dispersion}));
+
+//              switch ( ${msg.stratum} )
+//              {
+//                         case 0:
+//                    // unknown stratum => kiss code
+//                    rv->Assign(7, bytestring_to_val(${msg.reference_id}));
+//                    break;
+//                         case 1:
+                      // reference clock => ref clock string
+//                    rv->Assign(8, bytestring_to_val(${msg.reference_id}));
+//                    break;
+//                         default:
+                     // TODO: Check for v4/v6
+//                   const uint8* d = ${msg.reference_id}.data();
+//                   rv->Assign(9, new AddrVal(IPAddr(IPv4, (const uint32*) d, IPAddr::Network)));
+//                   break;
+//              }
+
+                rv->Assign(9, proc_ntp_timestamp(${nsm.reference_ts}));
+                rv->Assign(10, proc_ntp_timestamp(${nsm.origin_ts}));
+                rv->Assign(11, proc_ntp_timestamp(${nsm.receive_ts}));
+                rv->Assign(12, proc_ntp_timestamp(${nsm.transmit_ts}));
+
+                rv->Assign(15, new Val((uint32) ${nsm.extensions}->size(), TYPE_COUNT));
+
+                return rv;
+                %}
+
+
 	function proc_ntp_message(msg: NTP_PDU): bool
 	%{
 	 	
@@ -37,39 +77,10 @@ refine flow NTP_Flow += {
 	   rv->Assign(0, new Val(${msg.version}, TYPE_COUNT));
 	   rv->Assign(1, new Val(${msg.mode}, TYPE_COUNT));
 
-	   if ( ${msg.mode}>0 && ${msg.mode}<6 ) {
-           	rv->Assign(2, new Val(${msg.std.stratum}, TYPE_COUNT));
-    	   	rv->Assign(3, new Val(pow(2, ${msg.std.poll}), TYPE_INTERVAL));
-    	   	rv->Assign(4, new Val(pow(2, ${msg.std.precision}), TYPE_INTERVAL));
-
-    	   	rv->Assign(5, proc_ntp_short(${msg.std.root_delay}));
-    	   	rv->Assign(6, proc_ntp_short(${msg.std.root_dispersion}));
-
-//	   	switch ( ${msg.stratum} )
-//	   	{
-//      		   case 0:
-//        	      // unknown stratum => kiss code
-//        	      rv->Assign(7, bytestring_to_val(${msg.reference_id}));
-//        	      break;
-//      		   case 1:
-        	      // reference clock => ref clock string
-//        	      rv->Assign(8, bytestring_to_val(${msg.reference_id}));
-//        	      break;
-//      		   default:
-        	     // TODO: Check for v4/v6
-//        	     const uint8* d = ${msg.reference_id}.data();
-//        	     rv->Assign(9, new AddrVal(IPAddr(IPv4, (const uint32*) d, IPAddr::Network)));
-//        	     break;
-//  	        }
-
-    	   	rv->Assign(11, proc_ntp_timestamp(${msg.std.reference_ts}));
-    	   	rv->Assign(12, proc_ntp_timestamp(${msg.std.origin_ts}));
-    	   	rv->Assign(13, proc_ntp_timestamp(${msg.std.receive_ts}));
-    	   	rv->Assign(14, proc_ntp_timestamp(${msg.std.transmit_ts}));
-
-	   	rv->Assign(17, new Val((uint32) ${msg.std.extensions}->size(), TYPE_COUNT));	
+	   // The standard record
+           if ( ${msg.mode}>0 && ${msg.mode}<6 ) {
+	      rv->Assign(2, BuildNTPStdMsg(${msg.std})); 
 	   }
-	   
 	   BifEvent::generate_ntp_message(connection()->bro_analyzer(), connection()->bro_analyzer()->Conn(), rv);
 	   return true;
 	%}

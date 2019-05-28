@@ -4821,13 +4821,11 @@ export {
 module NTP;
 
 export {
-        ## NTP message as defined in :rfc:`5905`.
-        ## Doesn't include fields for mode 7 (reserved for private use), e.g. monlist
-        type NTP::Message: record {
-        ## The NTP version number (1, 2, 3, 4)
-        version:            count;
-        ## The NTP mode being used
-        mode:               count;
+
+	## NTP standard message as defined in :rfc:`5905` for mode=1-5
+	## This record contains the standard fields used by the NTP protocol
+	## for standard syncronization operations. 
+	type NTP::std: record {
         ## The stratum (primary server, secondary server, etc.)
         stratum:            count;
         ## The maximum interval between successive messages
@@ -4861,6 +4859,17 @@ export {
         digest:             string &optional;
         ## Number of extension fields  (which are not currently parsed)
         num_exts:           count &default=0;
+	};
+
+        ## NTP message as defined in :rfc:`5905`.
+        ## Doesn't include fields for mode 7 (reserved for private use), e.g. monlist
+        type NTP::Message: record {
+        ## The NTP version number (1, 2, 3, 4)
+        version:            count;
+        ## The NTP mode being used
+        mode:               count;
+	## If mode=1-5, the standard fields for syncronization operations are here.
+	std_msg:	    NTP::std;
         };
 }
 
