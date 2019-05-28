@@ -37,11 +37,11 @@ refine flow NTP_Flow += {
 	   rv->Assign(0, new Val(${msg.version}, TYPE_COUNT));
 	   rv->Assign(1, new Val(${msg.mode}, TYPE_COUNT));
 	   rv->Assign(2, new Val(${msg.stratum}, TYPE_COUNT));
-    	   //rv->Assign(3, new Val(pow(2, ${msg.poll}), TYPE_INTERVAL));
-    	   //rv->Assign(4, new Val(pow(2, ${msg.precision}), TYPE_INTERVAL));
+    	   rv->Assign(3, new Val(pow(2, ${msg.poll}), TYPE_INTERVAL));
+    	   rv->Assign(4, new Val(pow(2, ${msg.precision}), TYPE_INTERVAL));
 
-    	   //rv->Assign(5, proc_ntp_short(${msg.root_delay}));
-    	   //rv->Assign(6, proc_ntp_short(${msg.root_dispersion}));
+    	   rv->Assign(5, proc_ntp_short(${msg.root_delay}));
+    	   rv->Assign(6, proc_ntp_short(${msg.root_dispersion}));
 
 	   switch ( ${msg.stratum} )
 	   {
@@ -60,10 +60,10 @@ refine flow NTP_Flow += {
         	   break;
   	   }
 
-    	   //rv->Assign(11, proc_ntp_timestamp(${msg.reference_ts}));
-    	   //rv->Assign(12, proc_ntp_timestamp(${msg.origin_ts}));
-    	   //rv->Assign(13, proc_ntp_timestamp(${msg.receive_ts}));
-    	   //rv->Assign(14, proc_ntp_timestamp(${msg.transmit_ts}));
+    	   rv->Assign(11, proc_ntp_timestamp(${msg.reference_ts}));
+    	   rv->Assign(12, proc_ntp_timestamp(${msg.origin_ts}));
+    	   rv->Assign(13, proc_ntp_timestamp(${msg.receive_ts}));
+    	   rv->Assign(14, proc_ntp_timestamp(${msg.transmit_ts}));
 
 	   rv->Assign(17, new Val((uint32) ${msg.extensions}->size(), TYPE_COUNT));	
 	   BifEvent::generate_ntp_message(connection()->bro_analyzer(), connection()->bro_analyzer()->Conn(), rv);
