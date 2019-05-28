@@ -32,31 +32,31 @@ refine flow NTP_Flow += {
 
         # This builds the standard msg record
         function BuildNTPStdMsg(nsm: NTP_std_msg): BroVal
-                %{
-                   RecordVal* rv = new RecordVal(BifType::Record::NTP::std);
+        %{
+                RecordVal* rv = new RecordVal(BifType::Record::NTP::std);
 
-                rv->Assign(0, new Val(${nsm.stratum}, TYPE_COUNT));
+               	rv->Assign(0, new Val(${nsm.stratum}, TYPE_COUNT));
                 rv->Assign(1, new Val(pow(2, ${nsm.poll}), TYPE_INTERVAL));
                 rv->Assign(2, new Val(pow(2, ${nsm.precision}), TYPE_INTERVAL));
                 rv->Assign(3, proc_ntp_short(${nsm.root_delay}));
                 rv->Assign(4, proc_ntp_short(${nsm.root_dispersion}));
 
-//              switch ( ${msg.stratum} )
-//              {
-//                         case 0:
-//                    // unknown stratum => kiss code
-//                    rv->Assign(7, bytestring_to_val(${msg.reference_id}));
-//                    break;
-//                         case 1:
-                      // reference clock => ref clock string
-//                    rv->Assign(8, bytestring_to_val(${msg.reference_id}));
-//                    break;
-//                         default:
-                     // TODO: Check for v4/v6
-//                   const uint8* d = ${msg.reference_id}.data();
-//                   rv->Assign(9, new AddrVal(IPAddr(IPv4, (const uint32*) d, IPAddr::Network)));
-//                   break;
-//              }
+              	switch ( ${nsm.stratum} )
+              	{
+                 case 0:
+                   	// unknown stratum => kiss code
+                    	rv->Assign(7, bytestring_to_val(${nsm.reference_id}));
+                    	break;
+                 case 1:
+                    // reference clock => ref clock string
+                    rv->Assign(8, bytestring_to_val(${nsm.reference_id}));
+                    break;
+                 default:
+                   // TODO: Check for v4/v6
+                   const uint8* d = ${nsm.reference_id}.data();
+                   rv->Assign(9, new AddrVal(IPAddr(IPv4, (const uint32*) d, IPAddr::Network)));
+                   break;
+              	}
 
                 rv->Assign(9, proc_ntp_timestamp(${nsm.reference_ts}));
                 rv->Assign(10, proc_ntp_timestamp(${nsm.origin_ts}));
@@ -65,8 +65,8 @@ refine flow NTP_Flow += {
 
                 rv->Assign(15, new Val((uint32) ${nsm.extensions}->size(), TYPE_COUNT));
 
-                return rv;
-                %}
+        	return rv;
+        %}
 
 
 	function proc_ntp_message(msg: NTP_PDU): bool

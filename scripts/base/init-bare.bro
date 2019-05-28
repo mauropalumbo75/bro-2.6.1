@@ -4869,7 +4869,7 @@ export {
         ## The NTP mode being used
         mode:               count;
 	## If mode=1-5, the standard fields for syncronization operations are here.
-	std_msg:	    NTP::std;
+	std_msg:	    NTP::std &optional;
         };
 }
 
