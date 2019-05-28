@@ -4861,6 +4861,25 @@ export {
         num_exts:           count &default=0;
 	};
 
+        ## NTP control message as defined in :rfc:`1119` for mode=6
+        ## This record contains the fields used by the NTP protocol
+        ## for control operations.
+        type NTP::control: record {
+        #second_byte     : uint8;
+	## The sequence number of the command or response
+        sequence        : int;
+	## The current status of the system, peer or clock
+        status          : count;    #TODO: this must be further specified
+	## A 16-bit integer identifying a valid association
+        association_id  : int;
+	## A 16-bit integer indicating the offset, in octets, of the first octet in the data area
+        offs            : count;
+	## A 16-bit integer indicating the length of the data field, in octets
+        c		: count;
+	## The message data for the command or response + Authenticator (optional)
+        data            : string;   # TODO: distinguish data and authenticator
+	};
+
         ## NTP message as defined in :rfc:`5905`.
         ## Doesn't include fields for mode 7 (reserved for private use), e.g. monlist
         type NTP::Message: record {
@@ -4869,7 +4888,11 @@ export {
         ## The NTP mode being used
         mode:               count;
 	## If mode=1-5, the standard fields for syncronization operations are here.
+	## See :rfc:`5905`
 	std_msg:	    NTP::std &optional;
+	## If mode=6, the fields for control operations are here.
+	## See :rfc:`1119`
+	control_msg:	    NTP::control &optional;
         };
 }
 

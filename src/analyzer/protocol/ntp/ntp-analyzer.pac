@@ -68,6 +68,20 @@ refine flow NTP_Flow += {
         	return rv;
         %}
 
+        # This builds the control msg record
+        function BuildNTPControlMsg(ncm: NTP_control_msg): BroVal
+        %{
+                RecordVal* rv = new RecordVal(BifType::Record::NTP::control);
+
+                rv->Assign(0, new Val(${ncm.sequence}, TYPE_INT));
+                rv->Assign(1, new Val(${ncm.status}, TYPE_COUNT));
+//                rv->Assign(2, new Val(${ncm.association_id}), TYPE_INT));
+                rv->Assign(3, new Val(${ncm.offs}, TYPE_COUNT));
+                rv->Assign(4, new Val(${ncm.c}, TYPE_COUNT));
+
+                return rv;
+        %}
+
 
 	function proc_ntp_message(msg: NTP_PDU): bool
 	%{
@@ -80,6 +94,8 @@ refine flow NTP_Flow += {
 	   // The standard record
            if ( ${msg.mode}>0 && ${msg.mode}<6 ) {
 	      rv->Assign(2, BuildNTPStdMsg(${msg.std})); 
+	   } else if ( ${msg.mode}==6 ) {
+	      rv->Assign(3, BuildNTPControlMsg(${msg.control}));
 	   }
 	   BifEvent::generate_ntp_message(connection()->bro_analyzer(), connection()->bro_analyzer()->Conn(), rv);
 	   return true;

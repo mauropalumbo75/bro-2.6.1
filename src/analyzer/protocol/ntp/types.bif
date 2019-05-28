@@ -1,4 +1,5 @@
 module NTP;
 
 type NTP::std: record;
+type NTP::control: record;
 type NTP::Message: record;

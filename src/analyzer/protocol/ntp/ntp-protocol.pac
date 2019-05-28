@@ -12,7 +12,7 @@ type NTP_PDU(is_orig: bool) = record {
   	};
   	modes_6_7     	: case (mode) of {
 		# mode 6 is for control messages (format is different from modes 6-7)
-    		6 	-> control 	: bytestring &restofdata;
+    		6 	-> control 	: NTP_control_msg; #bytestring &restofdata;
 		# mode 7 is reserved or private (implementation dependent, for example used for some commands such as MONLIST) 
     		7 	-> reserved  	: bytestring &restofdata;
   		default -> unknown	: bytestring &restofdata;
@@ -56,7 +56,7 @@ type NTP_control_msg = record {
         status      	: uint16;    #TODO: this must be further specified
         association_id	: int16;
         offs		: uint16;
-        count   	: uint16;
+        c	   	: uint16;
         data		: bytestring &restofdata;
 	#auth		: #TODO
 } &let {
