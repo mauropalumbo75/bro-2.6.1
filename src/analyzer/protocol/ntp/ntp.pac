@@ -17,8 +17,8 @@ connection NTP_Conn(bro_analyzer: BroAnalyzer) {
 	downflow = NTP_Flow(false);
 };
 
-%include ntp-protocol.pac
 %include ntp-mode7.pac
+%include ntp-protocol.pac
 
 flow NTP_Flow(is_orig: bool) {
 	datagram = NTP_PDU(is_orig) withcontext(connection, this);

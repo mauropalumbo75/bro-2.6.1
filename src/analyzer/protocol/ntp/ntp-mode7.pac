@@ -106,14 +106,14 @@
 
 type NTP_mode7_msg = record {
   second_byte       : uint8;
-  implementation_num: uint8;
+  implementation    : uint8;
   request_code      : uint8;
   err_and_data_len  : uint16;
   data              : bytestring &length=data_len;
   have_mac          : case(auth_bit) of {
-        true  -> mac: NTP_MAC;
-    false -> nil: empty;
-  };
+        		true  -> mac: NTP_MAC;
+    			false -> nil: empty;
+  			};
 } &let {
   auth_bit  : bool  = (second_byte & 0x80) > 0;
   sequence  : uint8 = (second_byte & 0x7F);

@@ -92,11 +92,11 @@ refine flow NTP_Flow += {
         %{
                 RecordVal* rv = new RecordVal(BifType::Record::NTP::mode7);
 
-                rv->Assign(0, new Val(${m7.ReqCode}, TYPE_COUNT));
+                rv->Assign(0, new Val(${m7.request_code}, TYPE_COUNT));
                 rv->Assign(1, new Val(${m7.auth_bit}, TYPE_BOOL));
                 rv->Assign(2, new Val(${m7.sequence}, TYPE_COUNT));
                 rv->Assign(3, new Val(${m7.implementation}, TYPE_COUNT));
-                rv->Assign(4, new Val(${m7.err}, TYPE_COUNT));
+                rv->Assign(4, new Val(${m7.error_code}, TYPE_COUNT));
                 rv->Assign(5, bytestring_to_val(${m7.data}));
 
                 return rv;
