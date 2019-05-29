@@ -4878,7 +4878,7 @@ export {
 	## The response bit. Set to zero for commands, one for responses.
         resp_bit        : bool;
         ## The error bit. Set to zero for normal response, one for error response.
-        err_bit        : bool;
+        err_bit		: bool;
         ## The more bit. Set to zero for last fragment, one for all others.
         more_bit        : bool;
 	## The sequence number of the command or response
@@ -4895,6 +4895,48 @@ export {
         data            : string &optional;   # TODO: distinguish data and authenticator
 	};
 
+        ## NTP mode7 message for mode=7. Note that this is not defined in any RFC
+	## and is implementation dependent. We used the official implementation from
+	## the NTP official project (www.ntp.org).
+	## A mode 7 packet is used exchanging data between an NTP server
+	## and a client for purposes other than time synchronization, e.g.
+	## monitoring, statistics gathering and configuration. 
+	## For details see the documentation from the NTP official project (www.ntp.org),
+	## code v. ntp-4.2.8p13, in include/ntp_request.h.
+        type NTP::mode7: record {
+        ## An implementation-specific code which specifies the
+	## operation to be (which has been) performed and/or the
+	## format and semantics of the data included in the packet.
+        ReqCode		: count;
+        ## The authenticated bit. If set, this packet is authenticated.
+        auth_bit        : bool;
+        ## For a multipacket response, contains the sequence
+	## number of this packet.  0 is the first in the sequence,
+	## 127 (or less) is the last.  The More Bit must be set in
+	## all packets but the last.
+        sequence        : count;
+        ## The number of the implementation this request code
+	## is defined by.  An implementation number of zero is used
+	## for requst codes/data formats which all implementations
+	## agree on.  Implementation number 255 is reserved (for
+	## extensions, in case we run out).
+        implementation	: count;    
+        ##  Must be 0 for a request.  For a response, holds an error
+	##  code relating to the request.  If nonzero, the operation
+	##  requested wasn't performed.
+	##
+	##               0 - no error
+	##               1 - incompatible implementation number
+	##               2 - unimplemented request code
+	##               3 - format error (wrong data items, data size, packet size etc.)
+	##               4 - no data available (e.g. request for details on unknown peer)
+	##               5-6 I don't know
+	##               7 - authentication failure (i.e. permission denied)
+        err  		: count;
+        ## Rest of data
+        data            : string &optional;   # TODO: can be further parsed
+        };
+
         ## NTP message as defined in :rfc:`5905`.
         ## Doesn't include fields for mode 7 (reserved for private use), e.g. monlist
         type NTP::Message: record {
@@ -4908,6 +4950,14 @@ export {
 	## If mode=6, the fields for control operations are here.
 	## See :rfc:`1119`
 	control_msg:	    NTP::control &optional;
+        ## If mode=7, the fields for extra operations are here.
+        ## Note that this is not defined in any RFC
+        ## and is implementation dependent. We used the official implementation from
+        ## the NTP official project (www.ntp.org).
+        ## A mode 7 packet is used exchanging data between an NTP server
+        ## and a client for purposes other than time synchronization, e.g.
+        ## monitoring, statistics gathering and configuration.
+        mode7_msg:	    NTP::mode7 &optional;
         };
 }
 

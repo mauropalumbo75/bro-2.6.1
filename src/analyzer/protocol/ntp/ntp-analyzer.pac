@@ -87,6 +87,21 @@ refine flow NTP_Flow += {
                 return rv;
         %}
 
+        # This builds the mode7 msg record
+        function BuildNTPMode7Msg(m7: NTP_mode7_msg): BroVal
+        %{
+                RecordVal* rv = new RecordVal(BifType::Record::NTP::mode7);
+
+                rv->Assign(0, new Val(${m7.ReqCode}, TYPE_COUNT));
+                rv->Assign(1, new Val(${m7.auth_bit}, TYPE_BOOL));
+                rv->Assign(2, new Val(${m7.sequence}, TYPE_COUNT));
+                rv->Assign(3, new Val(${m7.implementation}, TYPE_COUNT));
+                rv->Assign(4, new Val(${m7.err}, TYPE_COUNT));
+                rv->Assign(5, bytestring_to_val(${m7.data}));
+
+                return rv;
+        %}
+
 
 	function proc_ntp_message(msg: NTP_PDU): bool
 	%{
@@ -101,7 +116,10 @@ refine flow NTP_Flow += {
 	      rv->Assign(2, BuildNTPStdMsg(${msg.std})); 
 	   } else if ( ${msg.mode}==6 ) {
 	      rv->Assign(3, BuildNTPControlMsg(${msg.control}));
-	   }
+	   } else if ( ${msg.mode}==7 ) {
+              rv->Assign(4, BuildNTPMode7Msg(${msg.mode7}));
+           }
+
 	   BifEvent::generate_ntp_message(connection()->bro_analyzer(), connection()->bro_analyzer()->Conn(), rv);
 	   return true;
 	%}
