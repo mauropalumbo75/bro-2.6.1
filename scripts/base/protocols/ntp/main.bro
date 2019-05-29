@@ -49,10 +49,11 @@ event ntp_message(c: connection, is_orig: bool, msg: NTP::Message) &priority=5
 
 event ntp_message(c: connection, is_orig: bool, msg: NTP::Message) &priority=-5
 {
-	if ( ! is_orig )
-  	{
+	# TODO: is it useful to log packets in both directions?
+	#if ( ! is_orig )
+  	#{
   	   Log::write(NTP::LOG, c$ntp);
-	}
+	#}
 }
 
 event bro_init() &priority=5
