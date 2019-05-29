@@ -60,9 +60,9 @@ type NTP_control_msg = record {
         data		: bytestring &restofdata;
 	#auth		: #TODO
 } &let {
-        R:	bool   = (second_byte & 0x80);	# First bit of 8-bits value
-        E:	bool   = (second_byte & 0x40);	# Second bit of 8-bits value
-        M:     	bool   = (second_byte & 0x20);	# Third bit of 8-bits value
+        R:	bool   = (second_byte & 0x80) > 0;	# First bit of 8-bits value
+        E:	bool   = (second_byte & 0x40) > 0;	# Second bit of 8-bits value
+        M:     	bool   = (second_byte & 0x20) > 0;	# Third bit of 8-bits value
         OpCode:	uint8  = (second_byte & 0x1F);	# Last 5 bits of 8-bits value
 } &byteorder=bigendian &exportsourcedata;
 
