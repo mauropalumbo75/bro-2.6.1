@@ -73,11 +73,16 @@ refine flow NTP_Flow += {
         %{
                 RecordVal* rv = new RecordVal(BifType::Record::NTP::control);
 
-                rv->Assign(0, new Val(${ncm.sequence}, TYPE_INT));
-                rv->Assign(1, new Val(${ncm.status}, TYPE_COUNT));
-//                rv->Assign(2, new Val(${ncm.association_id}), TYPE_INT));
-                rv->Assign(3, new Val(${ncm.offs}, TYPE_COUNT));
-                rv->Assign(4, new Val(${ncm.c}, TYPE_COUNT));
+                rv->Assign(0, new Val(${ncm.OpCode}, TYPE_COUNT));
+                rv->Assign(1, new Val(${ncm.R}, TYPE_BOOL));
+                rv->Assign(2, new Val(${ncm.E}, TYPE_BOOL));
+                rv->Assign(3, new Val(${ncm.M}, TYPE_BOOL));
+                rv->Assign(4, new Val(${ncm.sequence}, TYPE_COUNT));
+                rv->Assign(5, new Val(${ncm.status}, TYPE_COUNT));
+                rv->Assign(6, new Val(${ncm.association_id}, TYPE_COUNT));
+                rv->Assign(7, new Val(${ncm.offs}, TYPE_COUNT));
+                rv->Assign(8, new Val(${ncm.c}, TYPE_COUNT));
+                rv->Assign(9, bytestring_to_val(${ncm.data}));
 
                 return rv;
         %}

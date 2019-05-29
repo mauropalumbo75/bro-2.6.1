@@ -4865,19 +4865,34 @@ export {
         ## This record contains the fields used by the NTP protocol
         ## for control operations.
         type NTP::control: record {
-        #second_byte     : uint8;
+	## An integer specifying the command function. Values currently defined includes:
+	## 1 read status command/response
+	## 2 read variables command/response
+	## 3 write variables command/response
+	## 4 read clock variables command/response
+	## 5 write clock variables command/response
+	## 6 set trap address/port command/response
+	## 7 trap response
+	## Other values are reserved.
+        OpCode     	: count;
+	## The response bit. Set to zero for commands, one for responses.
+        resp_bit        : bool;
+        ## The error bit. Set to zero for normal response, one for error response.
+        err_bit        : bool;
+        ## The more bit. Set to zero for last fragment, one for all others.
+        more_bit        : bool;
 	## The sequence number of the command or response
-        sequence        : int;
+        sequence        : count;
 	## The current status of the system, peer or clock
         status          : count;    #TODO: this must be further specified
 	## A 16-bit integer identifying a valid association
-        association_id  : int;
+        association_id  : count;
 	## A 16-bit integer indicating the offset, in octets, of the first octet in the data area
         offs            : count;
 	## A 16-bit integer indicating the length of the data field, in octets
         c		: count;
 	## The message data for the command or response + Authenticator (optional)
-        data            : string;   # TODO: distinguish data and authenticator
+        data            : string &optional;   # TODO: distinguish data and authenticator
 	};
 
         ## NTP message as defined in :rfc:`5905`.

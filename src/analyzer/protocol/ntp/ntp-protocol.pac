@@ -52,9 +52,9 @@ type NTP_std_msg = record {
 # See RFC 1119 for details
 type NTP_control_msg = record {
         second_byte	: uint8;
-        sequence	: int8;
+        sequence	: uint16;
         status      	: uint16;    #TODO: this must be further specified
-        association_id	: int16;
+        association_id	: uint16;
         offs		: uint16;
         c	   	: uint16;
         data		: bytestring &restofdata;
