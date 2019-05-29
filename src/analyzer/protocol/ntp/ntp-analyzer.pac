@@ -120,7 +120,7 @@ refine flow NTP_Flow += {
               rv->Assign(4, BuildNTPMode7Msg(${msg.mode7}));
            }
 
-	   BifEvent::generate_ntp_message(connection()->bro_analyzer(), connection()->bro_analyzer()->Conn(), rv);
+	   BifEvent::generate_ntp_message(connection()->bro_analyzer(), connection()->bro_analyzer()->Conn(), is_orig(), rv);
 	   return true;
 	%}
 };
