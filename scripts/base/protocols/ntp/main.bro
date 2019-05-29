@@ -6,11 +6,9 @@ module NTP;
 const ports = { 123/udp };
 redef likely_server_ports += { ports };
 
-event bro_init() &priority=5
-	{
-	Analyzer::register_for_ports(Analyzer::ANALYZER_NTP, ports);
-	}
-
+redef record connection += {
+        ntp: Info &optional;
+};
 
 export {
         redef enum Log::ID += { LOG };
@@ -31,20 +29,43 @@ export {
         global log_ntp: event(rec: Info);
 }
 
-event ntp_message(c: connection, msg: NTP::Message)
-        {
-        # Log info on ntp.log
-        local info: Info;
-        info$ts  = network_time();
-        info$uid = c$uid;
-        info$id  = c$id;
-        info$mode = msg$mode;
+event ntp_message(c: connection, is_orig: bool, msg: NTP::Message) &priority=5
+{
+	local info: Info;
+  	if ( c?$ntp )
+  	  info = c$ntp;
+  	else
+  	{
+	  info$ts  = network_time();
+	  info$uid = c$uid;
+	  info$id  = c$id;
+          info$mode = msg$mode;
+	}
 
-        Log::write(NTP::LOG, info);
-        }
+	c$ntp = info;
+}
+
+event ntp_message(c: connection, is_orig: bool, msg: NTP::Message) &priority=-5
+{
+	if ( ! is_orig )
+  	{
+  		Log::write(NTP::LOG, c$ntp);
+  		delete c$ntp;
+	}
+}
+
+event connection_state_remove(c: connection) &priority=-5
+{
+	if ( c?$ntp )
+		Log::write(NTP::LOG, c$ntp);
+}
+
+
 
 event bro_init() &priority=5
 {
+    Analyzer::register_for_ports(Analyzer::ANALYZER_NTP, ports);
+
     Log::create_stream(NTP::LOG, [$columns = Info, $ev = log_ntp]);
 }
 
