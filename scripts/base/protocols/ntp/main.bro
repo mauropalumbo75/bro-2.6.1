@@ -6,10 +6,6 @@ module NTP;
 const ports = { 123/udp };
 redef likely_server_ports += { ports };
 
-redef record connection += {
-        ntp: Info &optional;
-};
-
 export {
         redef enum Log::ID += { LOG };
 
@@ -29,6 +25,10 @@ export {
         global log_ntp: event(rec: Info);
 }
 
+redef record connection += {
+        ntp: Info &optional;
+};
+
 event ntp_message(c: connection, is_orig: bool, msg: NTP::Message) &priority=5
 {
 	local info: Info;
@@ -43,24 +43,17 @@ event ntp_message(c: connection, is_orig: bool, msg: NTP::Message) &priority=5
 	}
 
 	c$ntp = info;
+	# Add the service to the Conn::LOG
+	add c$service["ntp"];
 }
 
 event ntp_message(c: connection, is_orig: bool, msg: NTP::Message) &priority=-5
 {
 	if ( ! is_orig )
   	{
-  		Log::write(NTP::LOG, c$ntp);
-  		delete c$ntp;
+  	   Log::write(NTP::LOG, c$ntp);
 	}
 }
-
-event connection_state_remove(c: connection) &priority=-5
-{
-	if ( c?$ntp )
-		Log::write(NTP::LOG, c$ntp);
-}
-
-
 
 event bro_init() &priority=5
 {
