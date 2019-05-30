@@ -18,6 +18,10 @@ export {
                 id:     conn_id &log;
                 ## The mode
                 mode:   count &log;
+		## For mode==6, add the OpCode
+		OpCode:	count &log &optional;
+                ## For mode==7, add the ReqCode
+                ReqCode: count &log &optional;
         };
 
         ## Event that can be handled to access the NTP record as it is sent on
@@ -41,6 +45,16 @@ event ntp_message(c: connection, is_orig: bool, msg: NTP::Message) &priority=5
 	  info$id  = c$id;
           info$mode = msg$mode;
 	}
+
+	
+        if ( msg?$control_msg && msg$control_msg?$OpCode )
+        {
+               info$OpCode = msg$control_msg$OpCode;
+        }
+        if ( msg?$mode7_msg && msg$mode7_msg?$ReqCode )
+        {
+               info$ReqCode = msg$mode7_msg$ReqCode;
+        }
 
 	c$ntp = info;
 	# Add the service to the Conn::LOG
