@@ -77,6 +77,9 @@ export {
         	## A 16-bit integer identifying a valid association
 	        association_id  : count &log;
 
+		## An implementation-specific code which specifies the
+		## operation to be (which has been) performed and/or the
+		## format and semantics of the data included in the packet.
         	ReqCode         : count &log;
         	## The authenticated bit. If set, this packet is authenticated.
         	auth_bit        : bool &log;
@@ -103,7 +106,7 @@ export {
         	##               5-6 I don't know
         	##               7 - authentication failure (i.e. permission denied)
         	err             : count &log;
-};
+	};
 
         ## Event that can be handled to access the NTP record as it is sent on
         ## to the logging framework.
@@ -117,10 +120,6 @@ redef record connection += {
 event ntp_message(c: connection, is_orig: bool, msg: NTP::Message) &priority=5
 {
 	local info: Info;
-  	if ( c?$ntp )
-  	  info = c$ntp;
-  	else
-  	{
 	  info$ts  = network_time();
 	  info$uid = c$uid;
 	  info$id  = c$id;
@@ -173,20 +172,17 @@ event ntp_message(c: connection, is_orig: bool, msg: NTP::Message) &priority=5
 	     info$implementation = msg$mode7_msg$implementation;
 	     info$err = msg$mode7_msg$err;
 	  }
-	}
 
+        # Copy the present packet info into the connection record
+	# If more ntp packets are sent on the same connection, the newest one
+	# will overwrite the previous
 	c$ntp = info;
+
+	# Log every ntp packet into ntp.log
+	Log::write(NTP::LOG, info);
+
 	# Add the service to the Conn::LOG
 	add c$service["ntp"];
-}
-
-event ntp_message(c: connection, is_orig: bool, msg: NTP::Message) &priority=-5
-{
-	# TODO: is it useful to log packets in both directions?
-	#if ( ! is_orig )
-  	#{
-  	   Log::write(NTP::LOG, c$ntp);
-	#}
 }
 
 event bro_init() &priority=5
