@@ -178,11 +178,14 @@ event ntp_message(c: connection, is_orig: bool, msg: NTP::Message) &priority=5
 	# will overwrite the previous
 	c$ntp = info;
 
-	# Log every ntp packet into ntp.log
-	Log::write(NTP::LOG, info);
-
 	# Add the service to the Conn::LOG
 	add c$service["ntp"];
+}
+
+event ntp_message(c: connection, is_orig: bool, msg: NTP::Message) &priority=-5
+{
+        # Log every ntp packet into ntp.log
+        Log::write(NTP::LOG, c$ntp);
 }
 
 event bro_init() &priority=5
