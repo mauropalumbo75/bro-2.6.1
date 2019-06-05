@@ -44,17 +44,17 @@ refine flow NTP_Flow += {
               	switch ( ${nsm.stratum} )
               	{
                  case 0:
-                   	// unknown stratum => kiss code
-                    	rv->Assign(7, bytestring_to_val(${nsm.reference_id}));
-                    	break;
+                   // unknown stratum => kiss code
+                   rv->Assign(5, bytestring_to_val(${nsm.reference_id}));
+                   break;
                  case 1:
                     // reference clock => ref clock string
-                    rv->Assign(8, bytestring_to_val(${nsm.reference_id}));
+                    rv->Assign(6, bytestring_to_val(${nsm.reference_id}));
                     break;
                  default:
                    // TODO: Check for v4/v6
                    const uint8* d = ${nsm.reference_id}.data();
-                   rv->Assign(9, new AddrVal(IPAddr(IPv4, (const uint32*) d, IPAddr::Network)));
+                   rv->Assign(7, new AddrVal(IPAddr(IPv4, (const uint32*) d, IPAddr::Network)));
                    break;
               	}
 

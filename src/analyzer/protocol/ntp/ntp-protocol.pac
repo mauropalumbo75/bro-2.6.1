@@ -34,8 +34,8 @@ type NTP_std_msg = record {
         root_delay     : NTP_Short_Time;
         root_dispersion: NTP_Short_Time;
         reference_id   : bytestring &length=4;
-        reference_ts   : NTP_Time;
 
+        reference_ts   : NTP_Time;
         origin_ts      : NTP_Time;
         receive_ts     : NTP_Time;
         transmit_ts    : NTP_Time;
