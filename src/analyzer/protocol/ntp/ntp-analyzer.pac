@@ -63,7 +63,16 @@ refine flow NTP_Flow += {
                 rv->Assign(11, proc_ntp_timestamp(${nsm.receive_ts}));
                 rv->Assign(12, proc_ntp_timestamp(${nsm.transmit_ts}));
 
-                rv->Assign(15, new Val((uint32) ${nsm.extensions}->size(), TYPE_COUNT));
+           	if (${nsm.mac_len}==20) {
+              	   rv->Assign(13, new Val(${nsm.mac.key_id}, TYPE_COUNT));
+              	   rv->Assign(14, bytestring_to_val(${nsm.mac.digest}));
+           	} else if (${nsm.mac_len}==24) {
+              	   rv->Assign(13, new Val(${nsm.mac_ext.key_id}, TYPE_COUNT));
+              	   rv->Assign(14, bytestring_to_val(${nsm.mac_ext.digest}));
+           	}
+
+		// TODO: add extension fields
+ 	        //rv->Assign(15, new Val((uint32) ${nsm.extensions}->size(), TYPE_COUNT));
 
         	return rv;
         %}
@@ -80,9 +89,8 @@ refine flow NTP_Flow += {
                 rv->Assign(4, new Val(${ncm.sequence}, TYPE_COUNT));
                 rv->Assign(5, new Val(${ncm.status}, TYPE_COUNT));
                 rv->Assign(6, new Val(${ncm.association_id}, TYPE_COUNT));
-                rv->Assign(7, new Val(${ncm.offs}, TYPE_COUNT));
-                rv->Assign(8, new Val(${ncm.c}, TYPE_COUNT));
-                rv->Assign(9, bytestring_to_val(${ncm.data}));
+                rv->Assign(7, bytestring_to_val(${ncm.data}));
+		// TODO add key_id and crypto_checksum
 
                 return rv;
         %}
