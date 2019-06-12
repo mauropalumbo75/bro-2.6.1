@@ -175,16 +175,33 @@ bool JSON::Describe(ODesc* desc, Value* val, const string& name) const
 				{
 				char c = val->val.string_val.data[i];
 
-				// 2byte Unicode escape special characters.
-				if ( c < 32 || c > 126 || c == '\n' || c == '"' || c == '\'' || c == '\\' || c == '&' )
-					{
-					desc->AddRaw("\\u00", 4);
-					char hex[2] = {'0', '0'};
-					bytetohex(c, hex);
-					desc->AddRaw(hex, 1);
-					desc->AddRaw(hex + 1, 1);
-					}
-				else
+                                if ( c == '"' )
+                                        desc->AddRaw("\\\"", 2);
+                                else if ( c == '\\' )
+                                        desc->AddRaw("\\\\", 2);
+                                else if ( c == '/' )
+                                        desc->AddRaw("\\/", 2);
+                                else if ( c == '\b' )
+                                        desc->AddRaw("\\b", 2);
+                                else if ( c == '\f' )
+                                        desc->AddRaw("\\f", 2);
+                                else if ( c == '\n' )
+                                        desc->AddRaw("\\n", 2);
+                                else if ( c == '\r' )
+                                        desc->AddRaw("\\r", 2);
+                                else if ( c == '\t' )
+                                        desc->AddRaw("\\t", 2);
+
+                                // 2byte Unicode escape special characters.
+                                else if ( c < 32 || c > 126 )
+                                        {
+                                        desc->AddRaw("\\\\u00", 5);
+                                        char hex[2] = {'0', '0'};
+                                        bytetohex(c, hex);
+                                        desc->AddRaw(hex, 1);
+                                        desc->AddRaw(hex + 1, 1);
+                                        }
+                                else
 					desc->AddRaw(&c, 1);
 				}
 
