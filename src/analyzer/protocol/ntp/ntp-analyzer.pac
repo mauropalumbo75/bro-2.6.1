@@ -113,6 +113,10 @@ refine flow NTP_Flow += {
 
 	function proc_ntp_message(msg: NTP_PDU): bool
 	%{
+	   connection()->bro_analyzer()->ProtocolConfirmation();
+
+	   if ( ! ntp_message )
+		return false;
 	 	
     	   RecordVal* rv = new RecordVal(BifType::Record::NTP::Message);
 
