@@ -4333,31 +4333,31 @@ export {
 		recipient    	: Host_Address &optional;
 	};
 
-	## The data from the ERROR_MSG message. See :rfc:`4120`.
-	type KRB::Error_Msg: record {
-		## Protocol version number (5 for KRB5)
-		pvno		: count;
-		## The message type (30 for ERROR_MSG)
-		msg_type	: count;
-		## Current time on the client
-		client_time	: time &optional;
-		## Current time on the server
-		server_time	: time;
-		## The specific error code
-		error_code	: count;
-		## Realm of the ticket
-		client_realm	: string &optional;
-		## Name on the ticket
-		client_name	: string &optional;
-		## Realm of the service
-		service_realm	: string;
-		## Name of the service
-		service_name	: string;
-		## Additional text to explain the error
-		error_text	: string &optional;
-		## Optional pre-authentication data
-		pa_data		: vector of KRB::Type_Value &optional;
-	};
+        ## The data from the ERROR_MSG message. See :rfc:`4120`.
+        type KRB::Error_Msg: record {
+                ## Protocol version number (5 for KRB5)
+                pvno            : count &optional;
+                ## The message type (30 for ERROR_MSG)
+                msg_type        : count &optional;
+                ## Current time on the client
+                client_time     : time &optional;
+                ## Current time on the server
+                server_time     : time &optional;
+                ## The specific error code
+                error_code      : count;
+                ## Realm of the ticket
+                client_realm    : string &optional;
+                ## Name on the ticket
+                client_name     : string &optional;
+                ## Realm of the service
+                service_realm   : string &optional;
+                ## Name of the service
+                service_name    : string &optional;
+                ## Additional text to explain the error
+                error_text      : string &optional;
+                ## Optional pre-authentication data
+                pa_data         : vector of KRB::Type_Value &optional;
+        };
 
 	## A Kerberos ticket. See :rfc:`4120`.
 	type KRB::Ticket: record {
@@ -4996,6 +4996,26 @@ export {
 	## and unthrottle its rate-limiting until it once again exceeds the
 	## threshold.
 	option sampling_duration = 10min;
+}
+
+module BinPAC;
+export {
+        ## Maximum capacity, in bytes, that the BinPAC flowbuffer is allowed to
+        ## grow to for use with incremental parsing of a given connection/analyzer.
+        const flowbuffer_capacity_max = 10 * 1024 * 1024 &redef;
+
+        ## The initial capacity, in bytes, that will be allocated to the BinPAC
+        ## flowbuffer of a given connection/analyzer.  If the buffer buffer is
+        ## later contracted, its capacity is also reduced to this size.
+        const flowbuffer_capacity_min = 512 &redef;
+
+        ## The threshold, in bytes, at which the BinPAC flowbuffer of a given
+        ## connection/analyzer will have its capacity contracted to
+        ## :bro:see:`BinPAC::flowbuffer_capacity_min` after parsing a full unit.
+        ## I.e. this is the maximum capacity to reserve in between the parsing of
+        ## units.  If, after parsing a unit, the flowbuffer capacity is greater
+        ## than this value, it will be contracted.
+        const flowbuffer_contract_threshold = 2 * 1024 * 1024 &redef;
 }
 
 module GLOBAL;
