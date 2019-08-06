@@ -10,12 +10,13 @@ export {
 	## reread every time they are updated so updates must be atomic
 	## with "mv" instead of writing the file in place.
 	const read_files: set[string] = {} &redef;
-}
 
 event Intel::read_entry(desc: Input::EventDescription, tpe: Input::Event, item: Intel::Item)
 	{
 	Intel::insert(item);
 	}
+
+}
 
 event bro_init() &priority=5
 	{
