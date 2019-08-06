@@ -20,6 +20,7 @@ NTP_Analyzer::~NTP_Analyzer()
 void NTP_Analyzer::Done()
 	{
 	Analyzer::Done();
+	Event(udp_session_done);
 	}
 
 void NTP_Analyzer::DeliverPacket(int len, const u_char* data,
