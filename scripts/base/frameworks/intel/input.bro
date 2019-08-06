@@ -16,6 +16,10 @@ event Intel::read_entry(desc: Input::EventDescription, tpe: Input::Event, item: 
 	Intel::insert(item);
 	}
 
+event Intel::read_error(desc: Input::EventDescription, message: string, level: Reporter::Level)
+{
+}
+
 }
 
 event bro_init() &priority=5
@@ -30,7 +34,8 @@ event bro_init() &priority=5
 			                  $mode=Input::REREAD,
 			                  $name=cat("intel-", a_file),
 			                  $fields=Intel::Item,
-			                  $ev=Intel::read_entry]);
+			                  $ev=Intel::read_entry,
+					  $error_ev=Intel::read_error]);
 			}
 		}
 	}
