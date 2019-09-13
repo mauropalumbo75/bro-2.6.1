@@ -1006,6 +1006,7 @@ int main(int argc, char** argv)
 	char* script_rule_files =
 		copy_string(internal_val("signature_files")->AsString()->CheckString());
 
+	cout<<"Script files: "<<script_rule_files<<endl;
 	char* tmp = script_rule_files;
 	char* s;
 	while ( (s = strsep(&tmp, " \t")) )
@@ -1013,11 +1014,14 @@ int main(int argc, char** argv)
 			rule_files.append(s);
 
 	// Append signature files defined in @load-sigs
-	for ( size_t i = 0; i < sig_files.size(); ++i )
+	for ( size_t i = 0; i < sig_files.size(); ++i ) {
 		rule_files.append(copy_string(sig_files[i].c_str()));
+		cout<<sig_files[i]<<endl;
+	}
 
 	if ( rule_files.length() > 0 )
 		{
+		cout<<"rule_files.length() "<<rule_files.length()<<endl;
 		rule_matcher = new RuleMatcher(RE_level);
 		if ( ! rule_matcher->ReadFiles(rule_files) )
 			{
