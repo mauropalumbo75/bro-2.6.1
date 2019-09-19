@@ -231,6 +231,7 @@ bool RuleMatcher::ReadFiles(const name_list& files)
 	HeapLeakChecker::Disabler disabler;
 #endif
 
+	cout<<"In  RuleMatcher::ReadFiles"<<endl;
 	parse_error = false;
 
 	for ( int i = 0; i < files.length(); ++i )
@@ -252,10 +253,12 @@ bool RuleMatcher::ReadFiles(const name_list& files)
 	if ( parse_error )
 		return false;
 
+        cout<<"Before BuildRulesTree()"<<endl;
 	BuildRulesTree();
 
 	string_list exprs[Rule::TYPES];
 	int_list ids[Rule::TYPES];
+	cout<<"Before BuildRegEx"<<endl;
 	BuildRegEx(root, exprs, ids);
 
 	return ! parse_error;
@@ -342,6 +345,7 @@ void RuleMatcher::InsertRuleIntoTree(Rule* r, int testnr,
 void RuleMatcher::BuildRegEx(RuleHdrTest* hdr_test, string_list* exprs,
 				int_list* ids)
 	{
+	cout<<"In RuleMatcher::BuildRegEx..."<<endl;
 	// For each type, get all patterns on this node.
 	for ( Rule* r = hdr_test->pattern_rules; r; r = r->next )
 		{
@@ -353,6 +357,7 @@ void RuleMatcher::BuildRegEx(RuleHdrTest* hdr_test, string_list* exprs,
 			}
 		}
 
+	cout<<"after first for"<<endl;
 	// If we're above the RE_level, these patterns will form the regexprs.
 	if ( hdr_test->level < RE_level )
 		{
@@ -361,6 +366,7 @@ void RuleMatcher::BuildRegEx(RuleHdrTest* hdr_test, string_list* exprs,
 				BuildPatternSets(&hdr_test->psets[i], exprs[i], ids[i]);
 		}
 
+	cout<<"after first if"<<endl;
 	// Get the patterns on all of our children.
 	for ( RuleHdrTest* h = hdr_test->child; h; h = h->sibling )
 		{
@@ -379,6 +385,7 @@ void RuleMatcher::BuildRegEx(RuleHdrTest* hdr_test, string_list* exprs,
 			}
 		}
 
+	 cout<<"after second for"<<endl;
 	// If we're on the RE_level, all patterns gathered now
 	// form the regexprs.
 	if ( hdr_test->level == RE_level )
@@ -389,6 +396,7 @@ void RuleMatcher::BuildRegEx(RuleHdrTest* hdr_test, string_list* exprs,
 		}
 
 	// If we're below the RE_level, the regexprs remains empty.
+	 cout<<"at the end of BuildRegEx"<<endl;
 	}
 
 void RuleMatcher::BuildPatternSets(RuleHdrTest::pattern_set_list* dst,

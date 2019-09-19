@@ -490,6 +490,38 @@ static void find_old_comm_usages()
 	traverse_all(&cb);
 	}
 
+void add_sign_file(string new_sig_file)
+{
+	name_list rule_files;
+        // Add new sig file
+        //string new_sig_file = "./aramis-bro/signatures/signature.sig";
+        rule_files.append(copy_string(new_sig_file.c_str()));
+
+	cout<<"In add_sign_file..."<<endl;
+        cout<<"rule_files.length() "<<rule_files.length()<<endl;
+        for ( int i = 0; i < rule_files.length(); ++i ) {
+                printf("%s\n",rule_files[i]);
+        }
+
+
+       if ( rule_files.length() > 0 )
+                {
+//                rule_matcher = new RuleMatcher(4);
+                if ( ! rule_matcher->ReadFiles(rule_files) )
+                        {
+//                        delete dns_mgr;
+                        exit(1);
+                        }
+
+//                if ( rule_debug )
+//                        rule_matcher->PrintDebug();
+
+//                file_mgr->InitMagic();
+                }
+
+}
+
+
 int main(int argc, char** argv)
 	{
 	std::set_new_handler(bro_new_handler);
@@ -1006,22 +1038,26 @@ int main(int argc, char** argv)
 	char* script_rule_files =
 		copy_string(internal_val("signature_files")->AsString()->CheckString());
 
-	cout<<"Script files: "<<script_rule_files<<endl;
 	char* tmp = script_rule_files;
 	char* s;
 	while ( (s = strsep(&tmp, " \t")) )
 		if ( *s )
 			rule_files.append(s);
 
+	cout<<"*********************"<<endl;
 	// Append signature files defined in @load-sigs
 	for ( size_t i = 0; i < sig_files.size(); ++i ) {
 		rule_files.append(copy_string(sig_files[i].c_str()));
 		cout<<sig_files[i]<<endl;
 	}
 
+	cout<<"rule_files.length() "<<rule_files.length()<<endl;
+	// Add new sig file
+	//string new_sig_file = "./aramis-bro/signatures/signature.sig";
+	//rule_files.append(copy_string(new_sig_file.c_str()));
+
 	if ( rule_files.length() > 0 )
 		{
-		cout<<"rule_files.length() "<<rule_files.length()<<endl;
 		rule_matcher = new RuleMatcher(RE_level);
 		if ( ! rule_matcher->ReadFiles(rule_files) )
 			{
@@ -1036,6 +1072,11 @@ int main(int argc, char** argv)
 		}
 
 	delete [] script_rule_files;
+
+	add_sign_file("./aramis-bro/signatures/signature.sig");
+
+
+
 
 	if ( g_policy_debug )
 		// ### Add support for debug command file.
